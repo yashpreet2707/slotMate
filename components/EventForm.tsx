@@ -12,18 +12,26 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Button } from "./ui/button";
+import useFetch from "@/hooks/useFetch";
+import { createEvent } from "@/actions/events";
+import { useRouter } from "next/navigation";
+import z from "zod/v3";
 
 type EventFormProps = {
   onSubmitForm: () => void;
 };
 
+type EventFormData = z.infer<typeof eventSchema>;
+
 const EventForm = ({ onSubmitForm }: EventFormProps) => {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm({
+  } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       duration: 30,
@@ -31,8 +39,21 @@ const EventForm = ({ onSubmitForm }: EventFormProps) => {
     },
   });
 
+  const { loading, error, fn: fnCreateEvent } = useFetch(createEvent);
+
+  const onSubmit = async (data: EventFormData) => {
+    await fnCreateEvent(data);
+
+    if (!loading && !error) {
+      onSubmitForm();
+    }
+  };
+
   return (
-    <form className="px-5 flex flex-col gap-4">
+    <form
+      className="px-5 flex flex-col gap-4"
+      onSubmit={handleSubmit(onSubmit)}
+    >
       <div>
         <label
           htmlFor="title"
@@ -91,8 +112,11 @@ const EventForm = ({ onSubmitForm }: EventFormProps) => {
         <Controller
           name="isPrivate"
           control={control}
-          render={({field}) => (
-            <Select value={field.value ? "true" : "false"} onValueChange={(value) => field.onChange(value === "true")}>
+          render={({ field }) => (
+            <Select
+              value={field.value ? "true" : "false"}
+              onValueChange={(value) => field.onChange(value === "true")}
+            >
               <SelectTrigger className="mt-1 w-full">
                 <SelectValue placeholder="Select Privacy" />
               </SelectTrigger>
@@ -110,7 +134,11 @@ const EventForm = ({ onSubmitForm }: EventFormProps) => {
           </p>
         )}
       </div>
-      <Button type="submit">Submit</Button>
+      {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
+
+      <Button type="submit" disabled={loading}>
+        {loading ? "Submitting..." : "Create Event"}
+      </Button>
     </form>
   );
 };
