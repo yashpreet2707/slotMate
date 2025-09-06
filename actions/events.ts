@@ -31,3 +31,59 @@ export async function createEvent(data: EventData) {
 
   return event;
 }
+
+export async function getUserEvents() {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not authenticated");
+  }
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) {
+    throw new Error("user not found.");
+  }
+
+  const events = await db.event.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: {
+        select: { bookings: true },
+      },
+    },
+  });
+
+  return { events, username: user.username };
+}
+
+export async function deleteEvent(eventId: string) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not authenticated");
+  }
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) {
+    throw new Error("user not found.");
+  }
+
+  const event = await db.event.findUnique({
+    where: { id: eventId },
+  });
+
+  if (!event || event.userId !== user.id) {
+    throw new Error("Event not found or unauthorized.");
+  }
+
+  await db.event.delete({
+    where: { id: event.id },
+  });
+
+  return { sucess: true };
+}
