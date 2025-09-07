@@ -20,12 +20,13 @@ type EventCardProps = {
     title: string;
     duration: number;
     isPrivate: boolean;
-    description: string;
+    description: string | null;
     _count: {
       bookings: number;
     };
   };
   username: string;
+  isPublic: boolean;
 };
 
 const EventCard = ({ event, username, isPublic = false }: EventCardProps) => {
@@ -49,7 +50,7 @@ const EventCard = ({ event, username, isPublic = false }: EventCardProps) => {
   const handleDelete = async () => {
     if (window?.confirm("Are you sure you want to delete this event?")) {
       await fnDeleteEvent(event.id);
-      router.refresh() ;
+      router.refresh();
     }
   };
 
@@ -65,7 +66,7 @@ const EventCard = ({ event, username, isPublic = false }: EventCardProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p>{event.description.substring(0, event.description.indexOf("."))}</p>
+        <p>{event.description?.substring(0, event.description.indexOf("."))}</p>
       </CardContent>
       {!isPublic && (
         <CardFooter className="flex gap-2">
@@ -73,7 +74,11 @@ const EventCard = ({ event, username, isPublic = false }: EventCardProps) => {
             <Link className="mr-1 h-4 w-4" />
             {isCopied ? "Copied!" : "Copy Link"}
           </Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={loading}>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={loading}
+          >
             <Trash2 className="mr-1 h-4 w-4" />
             {loading ? "Deleting..." : "Delete"}
           </Button>

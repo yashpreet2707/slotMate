@@ -14,7 +14,7 @@ import { BarLoader } from "react-spinners";
 const page = () => {
   const { isLoaded, user } = useUser();
 
-  const[origin, setOrigin] = useState("");
+  const [origin, setOrigin] = useState("");
 
   const {
     register,
@@ -31,6 +31,7 @@ const page = () => {
       setOrigin(window.location.origin);
     }
   }, [isLoaded]);
+
 
   const { loading, error, fn: fnUpdateUsername } = useFetch(updateUsername);
 
