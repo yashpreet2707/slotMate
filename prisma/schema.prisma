@@ -75,13 +75,13 @@ model Availability {
 model DayAvailability {
   id        String   @id @default(uuid())
   availabilityId String
-  day       dayOfWeek
+  day       DayOfWeek
   startTime DateTime
   endTime   DateTime
   availability   Availability @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
 }
 
-enum dayOfWeek {
+enum DayOfWeek {
   MONDAY
   TUESDAY
   WEDNESDAY

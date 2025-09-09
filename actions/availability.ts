@@ -1,6 +1,13 @@
 "use server";
-import { Prisma } from "@/lib/generated/prisma";
 import { db } from "@/prisma";
+export enum DayOfWeek {
+  MONDAY = "MONDAY",
+  TUESDAY = "TUESDAY",
+  WEDNESDAY = "WEDNESDAY",
+  THURSDAY = "THURSDAY",
+  FRIDAY = "FRIDAY",
+  SATURDAY = "SATURDAY",
+}
 import { auth } from "@clerk/nextjs/server";
 
 type DayAvailability = {
@@ -97,7 +104,7 @@ export async function updateAvailability(data: AvailabilityData) {
 
         return [
           {
-            day: dayOfWeek.toUpperCase() as Prisma.dayOfWeek,
+            day: DayOfWeek[dayOfWeek.toUpperCase() as keyof typeof DayOfWeek],
             startTime: new Date(`${baseDate}T${startTime}:00Z`),
             endTime: new Date(`${baseDate}T${endTime}:00Z`),
           },
@@ -108,13 +115,37 @@ export async function updateAvailability(data: AvailabilityData) {
   );
 
   if (user.availability) {
+    await db.availability.update({
+      where: { id: user.availability.id },
+      data: {
+        timeGap: data.timeGap,
+        days: {
+          deleteMany: {}, // remove old days
+          create: availabilityData.map((d) => ({
+            day: d.day as DayOfWeek,
+            startTime: d.startTime,
+            endTime: d.endTime,
+          })),
+        },
+      },
+    });
+  } else {
     await db.availability.create({
       data: {
         userId: user.id,
         timeGap: data.timeGap,
+        endTime:
+          availabilityData.length > 0
+            ? availabilityData
+                .map((d) => d.endTime)
+                .reduce((latest, curr) => (curr > latest ? curr : latest))
+            : new Date(),
         days: {
-          deleteMany: {},
-          create: availabilityData,
+          create: availabilityData.map((d) => ({
+            day: d.day as DayOfWeek,
+            startTime: d.startTime,
+            endTime: d.endTime,
+          })),
         },
       },
     });
